@@ -1,0 +1,72 @@
+# Copyright (C) 2026 KiasuBurger
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+"""What es1save-editor.exe runs."""
+
+import faulthandler
+import os
+import sys
+from typing import TextIO
+
+from es1save import __version__, gamepaths
+from es1save.editor import main
+
+LOG_NAME = 'editor.log'
+OLD_LOG_NAME = 'editor.old.log'
+
+
+def open_log() -> TextIO | None:
+    """Send stdout/err, GTK's warnings and the Python stack of a crash to
+    editor.log in the cache directory. The editor has no console, so all of that would
+    otherwise be lost. The log of the run before is kept as editor.old.log, so starting
+    the editor again after a crash does not wipe the log of the crash. Returns the log,
+    or None if the editor cannot write it."""
+    directory = gamepaths.cache_dir()
+    path = os.path.join(directory, LOG_NAME)
+    try:
+        os.makedirs(directory, exist_ok=True)
+        if os.path.exists(path):
+            os.replace(path, os.path.join(directory, OLD_LOG_NAME))
+        log = open(path, 'w', buffering=1, encoding='utf-8', errors='replace')  # noqa: SIM115 (open until exit)
+    except OSError:
+        return None
+    # started from a shell, the editor has the shell's streams, which it keeps (--version is
+    # read from them); started from Explorer, it has none
+    if sys.stdout is None:
+        sys.stdout = log
+    if sys.stderr is None:
+        sys.stderr = log
+        try:
+            # GTK writes its warnings to the C library's stderr, not Python's
+            os.dup2(log.fileno(), 2)
+        except OSError:
+            pass
+    faulthandler.enable(log)
+    print('es1save-editor %s' % __version__, file=log)
+    return log
+
+
+if __name__ == '__main__':
+    log = open_log()
+    try:
+        status: str | int | None = main()
+    except SystemExit as e:  # argparse stops the program this way, as for --version
+        status = e.code
+    # A crash stops the program before this line. Without this line, the log cannot show
+    # whether a "Windows fatal exception" stopped the editor. Windows reports some
+    # exceptions to faulthandler that a handler then catches, and the editor continues.
+    if log:
+        print('es1save-editor stopped normally, exit status %s' % status, file=log)
+    sys.exit(status)

@@ -1,0 +1,177 @@
+/*
+ * Copyright (C) 2026 KiasuBurger
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/* The editor's own layout. Its colours are the variables that game.css or system.css
+   defines, whichever is loaded ahead of this. The tier colours are the editor's own. */
+
+window.es1 { --tier: #6b7a82; }
+.es1 .tier-1 { --tier: #bcbcbc; }
+.es1 .tier-2 { --tier: #00cbff; }
+.es1 .tier-3 { --tier: #c838ff; }
+
+/* ---- navigation ---- */
+
+.sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+.sidebar .heading {
+  color: var(--faint);
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 14px 14px 4px 14px;
+}
+.sidebar button.nav {
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  font-weight: normal;
+  padding: 7px 12px;
+}
+.sidebar button.nav:hover { background: var(--nav-hover); }
+.sidebar button.nav:checked {
+  background: var(--nav-checked);
+  border-left-color: var(--accent);
+  color: var(--strong);
+}
+.sidebar button.nav .count { color: var(--faint); font-size: 0.85em; }
+
+/* ---- pages ---- */
+
+.page-title { font-size: 1.35em; font-weight: 700; letter-spacing: 1px; color: var(--strong); }
+.section-title {
+  color: var(--muted);
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-top: 10px;
+}
+.dim { color: var(--dim); }
+.key { color: var(--muted); }
+.folder { color: var(--bright); }
+.editor-row label.field { color: var(--muted); min-width: 78px; }
+.strong { color: var(--strong); font-weight: 600; }
+/* a short tag after a name, for example the active handicap */
+.badge { color: var(--accent); font-size: 0.75em; font-weight: 700; letter-spacing: 1px; }
+.value { font-family: monospace; color: var(--bright); }
+
+.warning {
+  background: alpha(#ffb02e, 0.12);
+  border-left: 3px solid #ffb02e;
+  color: var(--warning);
+  padding: 5px 8px;
+}
+
+/* ---- the loadout: a tile for each slot and each resource ---- */
+
+.slot-label { color: var(--dim); font-size: 0.75em; letter-spacing: 1px; }
+
+/* A tile with an item in it is dark under any theme: the game's icons are drawn for that. */
+button.tile {
+  min-width: 82px;
+  min-height: 82px;
+  padding: 0;
+  border-radius: 0;
+  border: 2px solid var(--tier);
+  box-shadow: none;
+  background-color: #141d22;
+  background-image: linear-gradient(to bottom, alpha(var(--tier), 0.04), alpha(var(--tier), 0.26));
+}
+button.tile:hover {
+  background-image: linear-gradient(to bottom, alpha(var(--tier), 0.14), alpha(var(--tier), 0.42));
+}
+button.tile.selected {
+  outline: 2px solid var(--strong);
+  outline-offset: 2px;
+}
+button.tile.empty {
+  border: 1px solid var(--slot-line);
+  background-image: none;
+  background-color: var(--slot);
+}
+button.tile.empty:hover { border-color: var(--accent); }
+/* a slot past the number that the perks give */
+button.tile.extra { border-style: dashed; border-color: var(--warning); }
+button.tile.resource { border: 1px solid var(--slot-line); background-image: none; }
+button.tile.resource.none > * { opacity: 0.35; }
+.tile .amount {
+  background: alpha(#05090b, 0.82);
+  color: #ffffff;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.86em;
+  padding: 0 4px;
+  min-width: 14px;
+}
+.tile .mark {
+  background: var(--tier);
+  color: #05090b;
+  font-weight: 800;
+  font-size: 0.7em;
+  padding: 0 3px;
+}
+.tile .placeholder { color: alpha(var(--tier), 0.9); font-size: 0.72em; font-weight: 700; }
+
+.detail { background: var(--panel); border-left: 1px solid var(--line); }
+.detail .card {
+  background-image: linear-gradient(to bottom, alpha(var(--tier), 0.22), alpha(var(--tier), 0.03) 55%);
+  border: 1px solid alpha(var(--tier), 0.55);
+  border-top: 3px solid var(--tier);
+  border-left-width: 1px;
+}
+
+/* an item in the run, with its controls */
+.card {
+  background-color: var(--card);
+  border: 1px solid alpha(var(--tier), 0.55);
+  border-left: 3px solid var(--tier);
+  padding: 10px 12px;
+}
+.card .name { font-size: 1.15em; font-weight: 700; color: var(--strong); }
+.card .tag { color: var(--tier); font-weight: 700; font-size: 0.8em; letter-spacing: 1px; }
+.card .description { color: var(--soft); font-size: 0.9em; }
+.attributes .attr-name { color: var(--muted); font-size: 0.86em; letter-spacing: 1px; }
+.attributes .attr-value { color: var(--bright); font-weight: 600; }
+.attributes .attr-value.better { color: var(--good); }
+.attributes .attr-value.worse { color: var(--bad); }
+.mod-effect { color: var(--dim); font-size: 0.8em; letter-spacing: 1px; }
+.chip {
+  background: var(--slot);
+  border: 1px solid var(--slot-line);
+  padding: 2px 4px 2px 8px;
+}
+
+.perk-row { padding: 3px 0; }
+.perk-name { color: var(--strong); font-weight: 600; }
+.perk-text { color: var(--soft); font-size: 0.9em; }
+.perk-benefit { color: var(--strong); }
+.locked .perk-name { color: var(--dim); }
+.locked-icon { opacity: 0.4; }
+
+.statusbar {
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 0.86em;
+  padding: 3px 12px;
+}
+.statusbar.error { color: var(--error); }
+.welcome .big { font-size: 1.6em; font-weight: 800; letter-spacing: 3px; color: var(--strong); }
+.welcome .small { font-size: 0.86em; margin-top: 14px; }
