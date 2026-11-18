@@ -19,7 +19,8 @@
                           Name, IsLocked, Level (whole levels bought), SubLevel (steps
                           bought towards the next level)
     UnlockedBlueprints    the class paths of the items the hangar can give as blueprints
-    ShipsUnlocked         one bool for each ship (see gamedata.SHIPS)
+    ShipsUnlocked         one bool for each ship (see gamedata.SHIPS). The save does not
+                          have it while it has the default value (DEFAULT_SHIPS).
     Glyphs                one GlyphState for each glyph of GlyphData.inl, in the same order:
                           ID, bUnlocked, bDecyphered (the game does not use
                           bDecyphered)
@@ -41,6 +42,9 @@ CLASS = 'CurrentPlayerData'
 PERKS = 'Perks'
 BLUEPRINTS = 'UnlockedBlueprints'
 SHIPS = 'ShipsUnlocked'
+# The value that the constructor of UCurrentPlayerData gives ShipsUnlocked: the Interceptor and
+# the Sentinel. The game does not write the property while it has this value.
+DEFAULT_SHIPS = [True, False, False, True]
 GLYPHS = 'Glyphs'
 SHIP_EQUIPMENT = 'ShipEquipment'
 NO_GLYPH = 'EGlyphID::NONE'
@@ -309,11 +313,11 @@ def set_blueprint(props: Properties, path: str, unlocked: bool) -> None:
 
 
 def ships(props: Properties) -> list[bool]:
-    return [bool(v) for v in get(props, SHIPS, [])]
+    return [bool(v) for v in get(props, SHIPS, DEFAULT_SHIPS)]
 
 
 def set_ship(props: Properties, index: int, unlocked: bool) -> None:
-    values = props[SHIPS]['value']
+    values = props.setdefault(SHIPS, {'type': 'ArrayProperty<BoolProperty>', 'value': list(DEFAULT_SHIPS)})['value']
     if not 0 <= index < len(values):
         raise IndexError('the save has %d ships' % len(values))
     values[index] = unlocked
