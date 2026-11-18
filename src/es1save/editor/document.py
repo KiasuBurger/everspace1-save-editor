@@ -39,6 +39,14 @@ HARDCORE_FILE = 'CurrentHCRunSave.sav'
 KINDS = {profile.CLASS: 'player', run.CLASS: 'run'}
 
 
+def kind_of(save: Save) -> str:
+    """Returns 'player', 'run' or '' for the class in the header of `save`. Older builds of the
+    game write the class name only (CurrentPlayerData). Builds on Unreal Engine 4.20 write the
+    full path (/Script/RSG.CurrentPlayerData)."""
+    found: str = save['header'].get('save_game_class', '')
+    return KINDS.get(found.rpartition('.')[2], '')
+
+
 class Document:
     """One save file and its tree."""
 
@@ -46,13 +54,13 @@ class Document:
         self.path = path
         self.save = save
         self.dirty = False
-        self.kind = KINDS.get(save['header'].get('save_game_class', ''), '')
+        self.kind = kind_of(save)
 
     @classmethod
     def load(cls, path: str) -> Document:
         save = savegame.load(path)
-        found = save['header'].get('save_game_class', '')
-        if found not in KINDS:
+        if not kind_of(save):
+            found = save['header'].get('save_game_class', '')
             raise ValueError(
                 '%s is not an Everspace save (it holds %s)' % (os.path.basename(path), found or 'no save class')
             )
