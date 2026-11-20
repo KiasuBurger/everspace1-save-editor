@@ -173,6 +173,7 @@ def parse_glyphs(text: str) -> list[dict[str, Any]]:
     """GlyphData.inl, the C++ that adds each glyph. A glyph has a positive effect, and some
     also have a negative one. Some cannot be used on some ships."""
     out = []
+    text = text.replace('\r\n', '\n')  # the Windows build has CR LF line ends
     for block in text.split('\n}\n'):
         m = _GLYPH.search(block)
         if not m:

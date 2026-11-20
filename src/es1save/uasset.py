@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Reads the default values of a cooked blueprint (.uasset and .uexp, UE 4.17).
+"""Reads the default values of a cooked blueprint (.uasset and .uexp, UE 4.17 and 4.20).
 
 A cooked package has a header in the .uasset and the data of its objects in the .uexp. The
 header holds a name table, the objects that the package imports, and the objects that it holds. The editor needs only the
@@ -94,7 +94,7 @@ class Asset:
         if legacy != -7:
             raise AssetError('package file version %d, which this reader cannot read' % legacy)
         r.skip(4)  # the UE3 version
-        self.version = r.i32()
+        self.version = r.i32()  # 0 in the unversioned packages of the builds on UE 4.20
         r.skip(4)  # the licensee version
         r.skip(20 * r.i32())  # custom versions: a GUID and a version each
         r.skip(4)  # total header size
@@ -125,6 +125,13 @@ class Asset:
             self.exports.append(
                 {'class': cls, 'parent': parent, 'outer': outer, 'name': name, 'size': size, 'offset': offset}
             )
+
+    @property
+    def has_next(self) -> bool:
+        """True if each field export has `Next`, the field that comes after it (UE 4.17). The
+        unversioned packages of the builds on UE 4.20 do not have it. In them, a struct
+        has an array of its child fields."""
+        return self.version != 0
 
     def name(self, r: _Reader) -> str:
         index, number = r.take('<2i')

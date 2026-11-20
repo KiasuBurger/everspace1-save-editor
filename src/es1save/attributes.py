@@ -727,6 +727,12 @@ def _b(function: Any) -> Any:
     return _math(lambda *a: bool(function(*[_number(x) for x in a])))
 
 
+def _sanitize_float(value: float) -> str:
+    """FString::SanitizeFloat: six decimals, without the zeros at the end, but at least one."""
+    text = '%f' % value
+    return text.rstrip('0') + '0' if text.endswith('.000000') else text.rstrip('0')
+
+
 def _divide(a: float, b: float) -> float:
     return 0.0 if b == 0 else a / b
 
@@ -931,6 +937,8 @@ LIBRARY_FUNCTIONS: dict[str, Any] = {
     'MakeLiteralFloat': _f(lambda a: a),
     'MakeLiteralInt': _math(lambda a: int(_number(a))),
     'MakeLiteralBool': _math(bool),
+    'Conv_FloatToString': _math(lambda a: _sanitize_float(_number(a))),  # for PrintString in the builds on UE 4.20
+    'MakeLiteralByte': _math(lambda a: int(_number(a)) & 0xFF),  # in the builds on UE 4.20
     'MeterToUnrealUnits': _f(lambda a: a * 100.0),
     'UnrealUnitsToMeter': _f(lambda a: a / 100.0),
     'Array_Add': _array_add,

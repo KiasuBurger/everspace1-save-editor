@@ -17,12 +17,12 @@
 
 A .pak holds the files one after another, an index of them, and a footer at the end that
 gives the position of the index. The game has its content in several of them
-(pakchunk0 to pakchunk6). This game uses version 4 of the format: the index is not
-encrypted, and a compressed file is in zlib blocks.
+(pakchunk0 to pakchunk6). The Linux build uses version 4 of the format and the Windows
+build uses version 5: the index is not encrypted, and a compressed file is in zlib blocks.
 
     files = read_files(game, 'RSG/Content/DataFiles/')      {path below that: bytes}
 
-Only what this game needs is here: versions 3 and 4, zlib, and no encryption.
+Only what this game needs is here: versions 3 to 5, zlib, and no encryption.
 """
 
 import glob
@@ -35,7 +35,8 @@ from typing import Self
 PAKS = os.path.join('RSG', 'Content', 'Paks')
 MAGIC = 0x5A6F12E1
 FOOTER = 44  # magic, version, index offset and size, SHA-1 of the index
-VERSIONS = (3, 4)
+VERSIONS = (3, 4, 5)
+RELATIVE_BLOCKS = 5  # from this version, the compression blocks are relative to the entry
 ZLIB = 1
 
 
@@ -121,6 +122,8 @@ class Pak:
             name, p = _string(index, p)
             entry = Entry(index, p)
             p = entry.end
+            if version >= RELATIVE_BLOCKS:
+                entry.blocks = [(start + entry.offset, end + entry.offset) for start, end in entry.blocks]
             self.entries[self.mount + name] = entry
 
     def read(self, name: str) -> bytes:

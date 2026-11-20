@@ -121,9 +121,23 @@ def save_dirs() -> list[str]:
     return list(dict.fromkeys(os.path.normpath(c) for c in out))
 
 
-def find_save_dir() -> str | None:
-    """The game's SaveGames directory, if it is in one of the places the game puts it."""
-    return next((c for c in save_dirs() if os.path.isdir(c)), None)
+def _newest_save(folder: str) -> float:
+    """The time of the most recent change to a save in `folder`, or -1 if it has no saves."""
+    try:
+        names = [n for n in os.listdir(folder) if n.endswith('.sav')]
+        return max((os.path.getmtime(os.path.join(folder, n)) for n in names), default=-1)
+    except OSError:
+        return -1
+
+
+def find_save_dir(dirs: list[str] | None = None) -> str | None:
+    """The game's SaveGames directory, if it is in one of the places the game puts it. When
+    more than one of them exists (for example, the saves of the Linux build and of the Windows
+    build in Proton), the folder that holds the most recent save. `dirs` replaces save_dirs()."""
+    found = [c for c in (save_dirs() if dirs is None else dirs) if os.path.isdir(c)]
+    if not found:
+        return None
+    return max(found, key=_newest_save)  # max() keeps the first of equal ones
 
 
 def cache_dir() -> str:

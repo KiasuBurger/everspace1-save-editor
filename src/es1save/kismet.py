@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Reads the Kismet bytecode of the functions of a cooked blueprint (UE 4.17).
+"""Reads the Kismet bytecode of the functions of a cooked blueprint (UE 4.17 and 4.20).
 
 A blueprint keeps the code of each of its functions as bytecode in the export of the
 function. attributes.py runs this code to calculate the attributes of an item as the game
@@ -290,22 +290,26 @@ OUT_PARM = 0x100
 RETURN_PARM = 0x400
 
 
-def _params(asset: Asset, child: int) -> list[list[Any]]:
-    """The parameters of a function, in order, from its first child property: [name, whether
-    it is an out parameter] for each.
-    Each property export starts with the end of its tagged properties, a flag, Next,
-    ArrayDim and the property flags."""
+def _params(asset: Asset, children: list[int]) -> list[list[Any]]:
+    """The parameters of a function, in order, from its child properties: [name, whether it is
+    an out parameter] for each. Each property export starts with the end of its tagged
+    properties, a flag, Next (only in UE 4.17), ArrayDim and the property flags."""
     out = []
-    seen = set()
-    while child > 0 and child not in seen:
-        seen.add(child)
+    for child in children:
         export = asset.exports[child - 1]
-        p = int(export['offset']) + 8 + 4
-        (following,) = struct.unpack_from('<i', asset.data, p)
-        (flags,) = struct.unpack_from('<Q', asset.data, p + 8)
+        p = int(export['offset']) + 8 + 4 + (4 if asset.has_next else 0) + 4
+        (flags,) = struct.unpack_from('<Q', asset.data, p)
         if flags & PARM and not flags & RETURN_PARM:
             out.append([str(export['name']), bool(flags & OUT_PARM)])
-        child = following
+    return out
+
+
+def _children(asset: Asset, first: int) -> list[int]:
+    """The child fields of a struct in UE 4.17: the chain of Next from the first child."""
+    out: list[int] = []
+    while 0 < first <= len(asset.exports) and first not in out:
+        out.append(first)
+        (first,) = struct.unpack_from('<i', asset.data, int(asset.exports[first - 1]['offset']) + 8 + 4)
     return out
 
 
@@ -322,9 +326,16 @@ def functions(asset: Asset) -> dict[str, dict[str, Any]]:
             index = struct.unpack_from('<i', asset.data, p)[0]
             if asset.names[index] != 'None':
                 continue  # a function with tagged properties, which the game's do not have
-            p += 8 + 4 * 3  # the end of the properties, a flag, Next, SuperStruct
-            (children,) = struct.unpack_from('<i', asset.data, p)
-            p += 4
+            if asset.has_next:
+                p += 8 + 4 * 3  # the end of the properties, a flag, Next, SuperStruct
+                (first,) = struct.unpack_from('<i', asset.data, p)
+                p += 4
+                children = _children(asset, first)
+            else:
+                p += 8 + 4 * 2  # the end of the properties, a flag, SuperStruct
+                (count,) = struct.unpack_from('<i', asset.data, p)
+                children = list(struct.unpack_from('<%di' % count, asset.data, p + 4))
+                p += 4 + 4 * count
             disk = struct.unpack_from('<2i', asset.data, p)[1]
             p += 8
             r = _Reader(asset, p, p + disk)
